@@ -4,12 +4,13 @@ from pygame.locals import *
 pygame.init()
 
 Windows_Path = "Python-Programs/Practice_Programs/" # Just sets the path to the correct one based on what I was working on
+Mac_Path = "/Users/aquila-simon/Documents/Python_Programs/Python-Programs/Practice_Programs/"
 pygame.display.set_caption("Test Display")
-pygame.display.set_icon(pygame.image.load(Windows_Path + 'icon.jpg')) #Sets Icon for Window
+pygame.display.set_icon(pygame.image.load((Mac_Path or Windows_Path) + 'icon.jpg')) #Sets Icon for Window
 Window_Size = (600, 400)
 screen = pygame.display.set_mode(Window_Size,0, 32) #Just creates window
 display = pygame.Surface((300,200)) #Declares a actual surface to draw on
-cloud = pygame.image.load(Windows_Path + 'cloud.png') #Loads Image for cloud
+cloud = pygame.image.load((Mac_Path or Windows_Path) + 'cloud.png') #Loads Image for cloud
 #First_Box = pygame.Rect(50,50,400,400) #Rect(Left coordinate, Top Coordinate, Width, Height)
 #Second_Box = pygame.Rect(100,100,300,300)
 #Third_Box = pygame.Rect(150,150,200,200)
