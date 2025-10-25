@@ -10,12 +10,9 @@ WINDOW_SIZE = (600, 400) #Sets Window size that popsup
 screen = pygame.display.set_mode(WINDOW_SIZE, 0 , 32) #Sets Window size that popsup
 display = pygame.Surface((300, 200)) #Sets the screen scaled up to make the sprites bigger
 
-window_path = "Python-Programs/Platformer_Game_WIP/" # just sets the path to the correct one based on what I was working on
-Mac_Path = "Platformer_Game_WIP/"
-
-grass_image = pygame.image.load((Mac_Path or window_path) + 'grass.png') #Sets Image for Grass and Dirt
+grass_image = pygame.image.load('grass.png') #Sets Image for Grass and Dirt
 tile_size = grass_image.get_width()
-dirt_image = pygame.image.load((Mac_Path or window_path) + 'dirt.png')
+dirt_image = pygame.image.load('dirt.png')
 
 moving_left = False #Movement Setup
 moving_right = False
@@ -63,15 +60,15 @@ def change_action(action_var,frame,new_value):
         
 animation_database = {}
 
-animation_database['run'] = load_animation(((Mac_Path or window_path) + 'player_animations/run'),[7,7])
-animation_database['idle'] = load_animation(((Mac_Path or window_path) + 'player_animations/idle'),[7,7,40])
+animation_database['run'] = load_animation(('player_animations/run'),[7,7])
+animation_database['idle'] = load_animation(('player_animations/idle'),[7,7,40])
 
 player_action = 'idle'
 player_frame = 0
 player_flip = False
 # Lines 38 - 70 Covers Animation of Idle and Run, can be expanded to include other animations
 
-game_map = load_map((Mac_Path or window_path) + 'map') #Loads map from Text File (Will be modified to create the infinite world, placeholder for now)
+game_map = load_map('map') #Loads map from Text File (Will be modified to create the infinite world, placeholder for now)
 
 player_rect = pygame.Rect(100,100,5,13) #Creates the Players "Hitbox" used for Gravity at this time, can be used for health bar in other cases
 
