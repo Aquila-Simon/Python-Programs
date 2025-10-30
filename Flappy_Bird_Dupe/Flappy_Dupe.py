@@ -30,6 +30,7 @@ Moving_Left = False
 Moving_Up = False
 Moving_Down = False
 air_timer = 0
+pipe_scroll_speed = 5
 random_pipe_placement = random.randint(-150, 150)
 upper_pipe_location = [700, random_pipe_placement]
 lower_pipe_location = [700, (random_pipe_placement + 500)]
@@ -116,11 +117,28 @@ while start_game == True: #Main Game Loop
         display.blit(player_image, player_location) #Draws the player image
         player_rect.x = player_location[0]
         player_rect.y = player_location[1]
-        upper_pipe_location[0] -= 7
-        lower_pipe_location[0] -= 7
+        upper_pipe_location[0] -= pipe_scroll_speed
+        lower_pipe_location[0] -= pipe_scroll_speed
 
         display.blit(score_text, (5,10)) #Draws Score
         display.blit(high_score_text, (600,10)) #Draws High Score
+
+        #Sets pipe speed based on score
+        if score < 10:
+            pipe_scroll_speed = 5
+        if score > 10:
+            pipe_scroll_speed = 6
+        if score > 20:
+            pipe_scroll_speed = 7
+        if score > 30:
+            pipe_scroll_speed = 8
+        if score > 40:
+            pipe_scroll_speed = 9
+        if score > 50:
+            pipe_scroll_speed = 10
+        if pipe_scroll_speed > 10:
+            pipe_scroll_speed = 10
+        
 
         if (upper_pipe_location[0] + 100) < player_location[0]: #Score Increase and Pipe Reset
             random_pipe_placement = random.randint(-150, 150)
