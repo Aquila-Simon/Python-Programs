@@ -54,7 +54,9 @@ def create_pipes():
     # -- Create upper and lower pipe rectangles --
     top_pipe = pygame.Rect(x_pos, 0, PIPE_WIDTH, gap_y)
     bottom_pipe = pygame.Rect(x_pos, gap_y + PIPE_GAP, PIPE_WIDTH, WINDOW_HEIGHT - (gap_y + PIPE_GAP))
+
     return top_pipe, bottom_pipe
+
 upper_pipe_rect, lower_pipe_rect = create_pipes()
 
 # -- Other Functions and Game Logic will go here --
@@ -135,11 +137,13 @@ while start_game:
             display.fill(BLACK)
             draw_text('Press ENTER to Start', font_large, WHITE, (140, 350))
         elif game_state == 'Pause_Game':
-            draw_text('Game Paused. Press ENTER to Resume', font_large, WHITE, (150, 350))
+            draw_text('Game Paused', font_large, WHITE, (230, 330))
+            draw_text('Press RETURN to Resume', font_large, WHITE, (110, 380))
         elif game_state == 'Game_Over':
             display.fill(BLACK)
-            draw_text('Game Over! Press ENTER to Restart', font_large, WHITE, (150, 350))
-            draw_text(f'Final Score: {score}', font_medium, WHITE, (300, 450))
+            draw_text('Game Over!', font_large, WHITE, (240, 300))
+            draw_text('Press RETURN to Restart', font_large, WHITE, (110, 355))
+            draw_text(f'Final Score: {score}', font_medium, WHITE, (260, 420))
 
     # -- Update Display --
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
