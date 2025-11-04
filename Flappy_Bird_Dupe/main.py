@@ -1,4 +1,4 @@
-import pygame, sys, random
+import pygame, sys, random, math
 
 # -- Initialize Pygame --
 pygame.init()
@@ -33,7 +33,18 @@ game_state = 'Start_Game'
 start_game = True
 player_location = [100, 0]
 gravity = 0
+gravity_acceleration = 0.6
+flap_strength = -11
+max_fall_speed = 10
+peak_flap_factor = 0.8
 pipe_scroll_speed = 5
+collision_flash_timer = 0
+
+# -- Player Rotation Variables --
+player_angle = 0
+max_up_angle = 25
+max_down_angle = -80
+tilt_speed = 3
 
 # -- Player Setup --
 # -- Current Player Image is a Placeholder will need to be replaced with final sprite once designed --
@@ -43,7 +54,7 @@ player_rect = player_image.get_rect(topleft=(player_location[0], player_location
 
 # -- Pipe Setup --
 PIPE_WIDTH = 100
-PIPE_GAP = 200
+PIPE_GAP = 190
 WINDOW_HEIGHT = WINDOW_SIZE[1]
 
 # -- Creating Pipes -- 
@@ -57,16 +68,80 @@ def create_pipes():
 
     return top_pipe, bottom_pipe
 
-upper_pipe_rect, lower_pipe_rect = create_pipes()
+# -- Multiple Pipe Setup --
+pipes = []
+PIPE_SPAWN_FREQUENCY = 1400  # milliseconds
+last_pipe_spawn_time = pygame.time.get_ticks()
+
+def add_pipe_pair():
+    top, bottom = create_pipes()
+    pipes.append({'top': top, 'bottom': bottom, 'scored': False})
+
+# -- Debug Overlay Variables --
+debug_mode = False
+debug_font = pygame.font.SysFont('Consolas', 20)
+
+def draw_debug_overlay(display, player_rect, pipes, clock):
+    """Draws FPS, hitboxes, spacing grid, and pipe spawn/gap guides with a soft fade pulse."""
+    time_now = pygame.time.get_ticks()
+    # Alpha pulse between 60 and 120
+    pulse_alpha = 60 + int(60 * (math.sin(time_now * 0.004) + 1) / 2)
+
+    # Create semi-transparent surface
+    overlay = pygame.Surface((800, 800), pygame.SRCALPHA)
+
+    # -- Semi-transparent ground grid --
+    grid_color = (80, 80, 80, pulse_alpha)
+    for y in range(0, 800, 50):  # horizontal grid lines every 50px
+        pygame.draw.line(overlay, grid_color, (0, y), (800, y), 1)
+    for x in range(0, 800, 100):  # vertical lines every 100px
+        pygame.draw.line(overlay, grid_color, (x, 0), (x, 800), 1)
+
+    # -- Pipe spawn reference line (x = 700) --
+    pygame.draw.line(overlay, (255, 255, 255, min(pulse_alpha + 40, 180)), (700, 0), (700, 800), 2)
+
+    # -- Pipe gap centerlines --
+    for pipe_pair in pipes:
+        top = pipe_pair['top']
+        bottom = pipe_pair['bottom']
+        gap_center_y = top.bottom + (bottom.top - top.bottom) // 2
+        pygame.draw.line(overlay, (0, 255, 255, min(pulse_alpha + 40, 180)), (top.left, gap_center_y), (top.right, gap_center_y), 2)
+
+    # -- Apply overlay --
+    display.blit(overlay, (0, 0))
+
+    # -- FPS counter --
+    fps_text = debug_font.render(f"FPS: {int(clock.get_fps())}", True, (255, 255, 0))
+    display.blit(fps_text, (10, 40))
+
+    # -- Debug mode label --
+    status_text = debug_font.render("DEBUG ON", True, (255, 100, 100))
+    display.blit(status_text, (680, 10))
+
+    # -- Player hitbox --
+    pygame.draw.rect(display, (0, 255, 0), player_rect, 2)
+
+    # -- Pipe hitboxes --
+    for pipe_pair in pipes:
+        pygame.draw.rect(display, (255, 255, 0), pipe_pair['top'], 2)
+        pygame.draw.rect(display, (255, 255, 0), pipe_pair['bottom'], 2)
 
 # -- Other Functions and Game Logic will go here --
 def reset_game():
-    global player_location, gravity, score, upper_pipe_rect, lower_pipe_rect, pipe_scroll_speed
+    global player_location, gravity, score, pipe_scroll_speed
+    global pipes, last_pipe_spawn_time
+    global collision_flash_timer
+
     player_location = [100, 300]
     gravity = 0
     score = 0
     pipe_scroll_speed = 5
-    upper_pipe_rect, lower_pipe_rect = create_pipes()
+    collision_flash_timer = 0
+
+    # Reset pipe system
+    pipes = []
+    add_pipe_pair()
+    last_pipe_spawn_time = pygame.time.get_ticks()
 
 def draw_text(text, font, color, position):
     text_surface = font.render(text, True, color)
@@ -81,7 +156,7 @@ while start_game:
             sys.exit()
         elif event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_SPACE) and game_state == 'Playing_Game':
-                gravity = -12
+                gravity = flap_strength
             elif event.key == pygame.K_RETURN:
                 if game_state in ('Start_Game', 'Game_Over'):
                     game_state = 'Playing_Game'
@@ -90,47 +165,90 @@ while start_game:
                     game_state = 'Playing_Game'
             elif event.key == pygame.K_ESCAPE and game_state == 'Playing_Game':
                 game_state = 'Pause_Game'
+            elif event.key == pygame.K_RALT:
+                debug_mode = not debug_mode # -- Toggles Debug Mode --
     # -- Game Logic --
     if game_state == 'Playing_Game':
         display.fill(SKY_BLUE)
         pygame.draw.rect(display, GROUND_GREEN, ground_rect)
 
         # -- Update player position --
-        gravity = min(gravity + 1, 5)
+        gravity = min(gravity + gravity_acceleration, max_fall_speed)
+        if -2 < gravity < 0:
+            gravity *= peak_flap_factor
         player_location[1] += gravity
         player_rect.topleft = player_location
+        # -- Update player rotation --
+        if gravity < 0:
+            player_angle = max_up_angle # -- Tilt Up --
+        else:
+            player_angle = max(player_angle - tilt_speed, max_down_angle) # -- Tilt Down --
 
-        # -- Move pipes --
-        upper_pipe_rect.x -= pipe_scroll_speed
-        lower_pipe_rect.x -= pipe_scroll_speed
+        # -- Spawn New Pipes --
+        current_time = pygame.time.get_ticks()
+        if current_time - last_pipe_spawn_time > PIPE_SPAWN_FREQUENCY:
+            add_pipe_pair()
+            last_pipe_spawn_time = current_time
 
-        # -- Check for pipe reset and scoring --
-        if upper_pipe_rect.right < player_rect.left:
-            score += 1
-            upper_pipe_rect, lower_pipe_rect = create_pipes()
+        # -- Move Pipes and Check for Scoring --
+        bird_center_x = player_rect.centerx
+        for pipe_pair in pipes:
+            top_pipe = pipe_pair['top']
+            bottom_pipe = pipe_pair['bottom']
+
+            # -- Move Pipes --
+            top_pipe.x -= pipe_scroll_speed
+            bottom_pipe.x -= pipe_scroll_speed
+
+            # -- Scoring Functionality --
+            pipe_center_x = top_pipe.centerx
+            if not pipe_pair['scored'] and pipe_center_x < bird_center_x:
+                score += 1
+                pipe_pair['scored'] = True
+            # -- Remove Off-Screen Pipes --
+            if top_pipe.right < 0:
+                pipes.remove(pipe_pair)
+        # -- Draw Pipes --
+        for pipe_pair in pipes:
+            for rect in (pipe_pair['top'], pipe_pair['bottom']):
+                color = PIPE_HIT if player_rect.colliderect(rect) else PIPE_BROWN
+                pygame.draw.rect(display, color, rect)
 
         # -- Increase difficulty --
         pipe_scroll_speed = min(5 + score // 10, 10)
 
         # -- Collision Detection --
-        collision = player_rect.colliderect(ground_rect) or player_rect.colliderect(upper_pipe_rect) or player_rect.colliderect(lower_pipe_rect)
-
+        collision = player_rect.colliderect(ground_rect) or any(player_rect.colliderect(pipe_rect)
+        for pipe_pair in pipes
+            for pipe_rect in (pipe_pair['top'], pipe_pair['bottom'])
+        )
         if collision:
             game_state = 'Game_Over'
+            collision_flash_timer = 30
             if score > high_score:
                 high_score = score
         
-        # -- Draw Pipes --
-        for pipe in (upper_pipe_rect, lower_pipe_rect):
-            color = PIPE_HIT if player_rect.colliderect(pipe) else PIPE_BROWN
-            pygame.draw.rect(display, color, pipe)
 
         # -- Draw Player --
-        display.blit(player_image, player_location)
+        rotated_bird = pygame.transform.rotozoom(player_image, player_angle, 1.0)
+        rotated_rect = rotated_bird.get_rect(center=player_rect.center)
+        display.blit(rotated_bird, rotated_rect)
 
         # -- Draw Score --
         draw_text(f'Score: {score}', font_small, WHITE, (5, 10))
         draw_text(f'High Score: {high_score}', font_small, WHITE, (600, 10))
+
+        # -- Collision Flash Effect --
+        if collision_flash_timer > 0:
+            flash_surface = pygame.Surface((800, 800))
+            flash_surface.set_alpha(int(150 * (collision_flash_timer / 30)))  # fade out
+            flash_surface.fill((255, 0, 0))
+            display.blit(flash_surface, (0, 0))
+            collision_flash_timer -= 1
+
+        # -- Debug Overlay --
+        if debug_mode:
+            draw_debug_overlay(display, player_rect, pipes, clock)
 
     else:
         if game_state == 'Start_Game':
