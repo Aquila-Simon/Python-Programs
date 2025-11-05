@@ -1,4 +1,11 @@
-import pygame, sys, random, math
+import pygame, sys, random, math, os
+
+platform_id = sys.platform
+
+if platform_id == "win32":
+    os.chdir('/Users/Aquil/Documents/Python_Programs/Python-Programs/Flappy_Bird_Dupe')
+elif platform_id == "darwin":
+    os.chdir('/Users/aquila-simon/Documents/Python_Programs/Python-Programs/Flappy_Bird_Dupe')
 
 # -- Initialize Pygame --
 pygame.init()
@@ -181,6 +188,9 @@ while start_game:
                     game_state = 'Playing_Game'
             elif event.key == pygame.K_ESCAPE and game_state == 'Playing_Game':
                 game_state = 'Pause_Game'
+            elif event.key == pygame.K_ESCAPE and game_state == 'Game_Over': #For Easier exiting when game is over
+                pygame.quit()
+                sys.exit()
             elif event.key == pygame.K_RALT:
                 debug_mode = not debug_mode # -- Toggles Debug Mode --
     # -- Game Logic --
