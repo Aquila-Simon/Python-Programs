@@ -25,8 +25,11 @@ font_small = pygame.font.SysFont('Rockwell', 25)
 font_medium = pygame.font.SysFont('Rockwell', 40)
 font_large = pygame.font.SysFont('Rockwell', 50)
 
+
 # -- Game Start Variables --
 ground_rect = pygame.Rect(0, 650, 800, 150)  #Rectangle for Ground
+ground_y = 650
+ground_height = 150
 score = 0
 high_score = 0
 game_state = 'Start_Game'
@@ -39,6 +42,10 @@ max_fall_speed = 10
 peak_flap_factor = 0.8
 pipe_scroll_speed = 5
 collision_flash_timer = 0
+ground_scroll = 0
+scroll_speed = 5  # tweak for smoother motion
+background_scroll = 0
+background_speed = 2  # slower than ground and pipes for depth
 
 # -- Player Rotation Variables --
 player_angle = 0
@@ -51,6 +58,13 @@ tilt_speed = 3
 player_image = pygame.image.load('stephen.png').convert()
 player_image.set_colorkey(WHITE)
 player_rect = player_image.get_rect(topleft=(player_location[0], player_location[1]))
+
+# -- Ground Setup --
+ground_image = pygame.image.load('ground.png')
+
+# -- Background Setup --
+background_img = pygame.image.load('background.png').convert()
+background_img = pygame.transform.scale(background_img, (800, 800))
 
 # -- Pipe Setup --
 PIPE_WIDTH = 100
@@ -131,12 +145,14 @@ def reset_game():
     global player_location, gravity, score, pipe_scroll_speed
     global pipes, last_pipe_spawn_time
     global collision_flash_timer
+    global ground_scroll
 
     player_location = [100, 300]
     gravity = 0
     score = 0
     pipe_scroll_speed = 5
     collision_flash_timer = 0
+    ground_scroll = 0
 
     # Reset pipe system
     pipes = []
@@ -170,7 +186,12 @@ while start_game:
     # -- Game Logic --
     if game_state == 'Playing_Game':
         display.fill(SKY_BLUE)
-        pygame.draw.rect(display, GROUND_GREEN, ground_rect)
+        pygame.draw.rect(display, (65,152,10), ground_rect) #Draws the ground
+
+        # -- Update background scroll --
+        background_scroll -= background_speed
+        if abs(background_scroll) > 800:
+            background_scroll = 0
 
         # -- Update player position --
         gravity = min(gravity + gravity_acceleration, max_fall_speed)
@@ -178,17 +199,27 @@ while start_game:
             gravity *= peak_flap_factor
         player_location[1] += gravity
         player_rect.topleft = player_location
+
         # -- Update player rotation --
         if gravity < 0:
             player_angle = max_up_angle # -- Tilt Up --
         else:
             player_angle = max(player_angle - tilt_speed, max_down_angle) # -- Tilt Down --
 
+        # -- Update ground scroll --
+        ground_scroll -= scroll_speed
+        if abs(ground_scroll) > 800:
+            ground_scroll = 0
+
         # -- Spawn New Pipes --
         current_time = pygame.time.get_ticks()
         if current_time - last_pipe_spawn_time > PIPE_SPAWN_FREQUENCY:
             add_pipe_pair()
             last_pipe_spawn_time = current_time
+
+        # -- Draw Parallax Background --
+        display.blit(background_img, (background_scroll, 0))
+        display.blit(background_img, (background_scroll + 800, 0))
 
         # -- Move Pipes and Check for Scoring --
         bird_center_x = player_rect.centerx
@@ -208,6 +239,7 @@ while start_game:
             # -- Remove Off-Screen Pipes --
             if top_pipe.right < 0:
                 pipes.remove(pipe_pair)
+
         # -- Draw Pipes --
         for pipe_pair in pipes:
             for rect in (pipe_pair['top'], pipe_pair['bottom']):
@@ -227,7 +259,10 @@ while start_game:
             collision_flash_timer = 30
             if score > high_score:
                 high_score = score
-        
+
+        # -- Draw Scrolling Ground --
+        display.blit(ground_image, (ground_scroll,ground_y))
+        display.blit(ground_image, (ground_scroll + 800, ground_y))
 
         # -- Draw Player --
         rotated_bird = pygame.transform.rotozoom(player_image, player_angle, 1.0)
