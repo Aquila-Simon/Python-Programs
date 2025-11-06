@@ -1,7 +1,7 @@
 import pygame, sys, random, math, os
 
+# -- Added to run a change directory code for both MacOS and Windows --
 platform_id = sys.platform
-
 if platform_id == "win32":
     os.chdir('/Users/Aquil/Documents/Python_Programs/Python-Programs/Flappy_Bird_Dupe')
 elif platform_id == "darwin":
@@ -93,6 +93,7 @@ def create_pipes():
 pipes = []
 PIPE_SPAWN_FREQUENCY = 1400  # milliseconds
 last_pipe_spawn_time = pygame.time.get_ticks()
+pause_start_time = None
 
 def add_pipe_pair():
     top, bottom = create_pipes()
@@ -185,8 +186,15 @@ while start_game:
                     game_state = 'Playing_Game'
                     reset_game()
                 elif game_state == 'Pause_Game':
+                    # When unpausing, adjust pipe spawn timer to ignore pause duration
+                    if pause_start_time is not None:
+                        paused_duration = pygame.time.get_ticks() - pause_start_time
+                        last_pipe_spawn_time += paused_duration
+                        pause_start_time = None
                     game_state = 'Playing_Game'
             elif event.key == pygame.K_ESCAPE and game_state == 'Playing_Game':
+            # When pausing, record the pause start time
+                pause_start_time = pygame.time.get_ticks()
                 game_state = 'Pause_Game'
             elif event.key == pygame.K_ESCAPE and game_state == 'Game_Over': #For Easier exiting when game is over
                 pygame.quit()
