@@ -15,8 +15,8 @@ clock = pygame.time.Clock()
 # -- Setting up Window Display --
 WINDOW_SIZE = (800, 800)
 screen = pygame.display.set_mode(WINDOW_SIZE, 0, 32)
-pygame.display.set_caption('Flappy Dupe')
-display = pygame.Surface((800, 800))
+pygame.display.set_caption('SyntaxFlapError')
+display = pygame.Surface(WINDOW_SIZE)
 
 # -- Setting Up Colours to be Used in Game --
 SKY_BLUE = (135, 206, 235)
@@ -197,6 +197,9 @@ while start_game:
                 pause_start_time = pygame.time.get_ticks()
                 game_state = 'Pause_Game'
             elif event.key == pygame.K_ESCAPE and game_state == 'Game_Over': #For Easier exiting when game is over
+                pygame.quit()
+                sys.exit()
+            elif event.key == pygame.K_ESCAPE and game_state == 'Pause_Game': #For Easoer exiting when game is paused
                 pygame.quit()
                 sys.exit()
             elif event.key == pygame.K_RALT:
