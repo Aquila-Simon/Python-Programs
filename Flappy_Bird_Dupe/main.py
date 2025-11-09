@@ -69,6 +69,10 @@ player_rect = player_image.get_rect(topleft=(player_location[0], player_location
 # -- Ground Setup --
 ground_image = pygame.image.load('ground.png')
 
+# -- Pipe Setup --
+pipe_top_img = pygame.image.load('pipe_top.png')
+pipe_body_img = pygame.image.load('pipe_body.png')
+
 # -- Background Setup --
 background_img = pygame.image.load('background.png').convert()
 background_img = pygame.transform.scale(background_img, (800, 800))
@@ -263,9 +267,31 @@ while start_game:
 
         # -- Draw Pipes --
         for pipe_pair in pipes:
-            for rect in (pipe_pair['top'], pipe_pair['bottom']):
-                color = PIPE_HIT if player_rect.colliderect(rect) else PIPE_BROWN
-                pygame.draw.rect(display, color, rect)
+            top_rect = pipe_pair['top']
+            bottom_rect = pipe_pair['bottom']
+
+            # Optional: keep rect for debug visualization
+            color_top = PIPE_HIT if player_rect.colliderect(top_rect) else PIPE_BROWN
+            color_bottom = PIPE_HIT if player_rect.colliderect(bottom_rect) else PIPE_BROWN
+            # Comment out these two if you don’t want the colored rectangles visible
+            # pygame.draw.rect(display, color_top, top_rect)
+            # pygame.draw.rect(display, color_bottom, bottom_rect)
+
+            # --- Draw pipe images ---
+            # Scale body images to fit rects
+            top_body_scaled = pygame.transform.scale(pipe_body_img, (top_rect.width, top_rect.height))
+            bottom_body_scaled = pygame.transform.scale(pipe_body_img, (bottom_rect.width, bottom_rect.height))
+
+            # Flip the top pipe image vertically (so it’s upside-down)
+            top_body_scaled = pygame.transform.flip(top_body_scaled, False, True)
+
+            # Draw images at rect positions
+            display.blit(top_body_scaled, (top_rect.x, top_rect.y))
+            display.blit(bottom_body_scaled, (bottom_rect.x, bottom_rect.y))
+
+            # Optional: if you have a separate cap/lip image, draw it here
+            # display.blit(pipe_top_img, (top_rect.x, top_rect.bottom - pipe_top_img.get_height()))
+            # display.blit(pipe_top_img, (bottom_rect.x, bottom_rect.y))
 
         # -- Increase difficulty --
         pipe_scroll_speed = min(5 + score // 10, 10)
