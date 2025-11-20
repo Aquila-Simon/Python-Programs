@@ -77,6 +77,65 @@ pipe_body_img = pygame.image.load('pipe_body.png')
 background_img = pygame.image.load('background.png').convert()
 background_img = pygame.transform.scale(background_img, (800, 800))
 
+def draw_text(text, font, color, position):
+    text_surface = font.render(text, True, color)
+    display.blit(text_surface, position)
+
+# -- Start Screen Revamp --
+def draw_start_screen():
+    display.blit(background_img, (0,0)) #Draws background onto start screen
+
+    #Title Text
+    title_text = font_large.render("SyntaxFlapError", True, (WHITE))
+    display.blit(title_text, (400 - title_text.get_width()//2, 200))
+    display.blit(player_image, (375, 375))
+    #Press Space Prompt
+    if (pygame.time.get_ticks() // 500) % 2 == 0:
+        prompt_text = font_small.render("Press ENTER to Start", True, (WHITE))
+        display.blit(prompt_text, (400 - prompt_text.get_width()//2, 550))
+
+# -- Fade to white test before game starts --
+def fade_to_white(surface, duration_frames=30):
+    fade_surface = pygame.Surface(WINDOW_SIZE)
+    fade_surface.fill((WHITE))
+
+    for alpha in range(0, 256, int(256/duration_frames)):
+        fade_surface.set_alpha(alpha)
+        screen.blit(surface, (0, 0))
+        screen.blit(fade_surface, (0, 0))
+        pygame.display.flip()
+        clock.tick(60)
+    
+    fade_surface.set_alpha(255)
+    screen.blit(fade_surface, (0, 0))
+    pygame.display.flip
+    clock.tick(60)
+
+# -- Game Over Screen Revamp -- (Decide if we want High Score and Score or only Score??)
+def draw_game_over():
+    display.blit(background_img, (0,0))
+
+    #Fade to Black overlay
+    overlay = pygame.Surface(WINDOW_SIZE)
+    overlay.set_alpha(160)
+    overlay.fill((BLACK))
+    display.blit(overlay, (0,0))
+
+    #Title Text
+    title = font_large.render("Game Over!", True, (WHITE))
+    display.blit(title, (400 - title.get_width()//2, 200))
+    #Current Score
+    score_text = font_medium.render(f"Score: {score}", True, (WHITE))
+    display.blit(score_text, (400 - score_text.get_width()//2, 320))
+    #High Score (Not Sure if we should show?)
+    high_score_text = font_medium.render(f"High Score: {high_score}", True, (WHITE))
+    display.blit(high_score_text, (400 - high_score_text.get_width()//2, 380))
+
+    #Restart Game Prompt
+    if (pygame.time.get_ticks() // 500) % 2 == 0:
+        prompt = font_small.render("Press RETURN to Restart", True, (WHITE))
+        display.blit(prompt, (400 - prompt.get_width()//2, 500))
+
 # -- Pipe Setup --
 PIPE_WIDTH = 100
 PIPE_GAP = 190
@@ -171,10 +230,6 @@ def reset_game():
     add_pipe_pair()
     last_pipe_spawn_time = pygame.time.get_ticks()
 
-def draw_text(text, font, color, position):
-    text_surface = font.render(text, True, color)
-    display.blit(text_surface, position)
-
 # -- Main Game Loop --
 while start_game:
     # -- Handling Event Cases --
@@ -187,6 +242,7 @@ while start_game:
                 gravity = flap_strength
             elif event.key == pygame.K_RETURN:
                 if game_state in ('Start_Game', 'Game_Over'):
+                    fade_to_white(display)
                     game_state = 'Playing_Game'
                     reset_game()
                 elif game_state == 'Pause_Game':
@@ -203,7 +259,7 @@ while start_game:
             elif event.key == pygame.K_ESCAPE and game_state == 'Game_Over': #For Easier exiting when game is over
                 pygame.quit()
                 sys.exit()
-            elif event.key == pygame.K_ESCAPE and game_state == 'Pause_Game': #For Easoer exiting when game is paused
+            elif event.key == pygame.K_ESCAPE and game_state == 'Pause_Game': #For Easier exiting when game is paused
                 pygame.quit()
                 sys.exit()
             elif event.key == pygame.K_RALT:
@@ -334,16 +390,18 @@ while start_game:
 
     else:
         if game_state == 'Start_Game':
-            display.fill(BLACK)
-            draw_text('Press ENTER to Start', font_large, WHITE, (140, 350))
+            #display.fill(BLACK)
+            #draw_text('Press ENTER to Start', font_large, WHITE, (140, 350))
+            draw_start_screen()
         elif game_state == 'Pause_Game':
             draw_text('Game Paused', font_large, WHITE, (230, 330))
             draw_text('Press RETURN to Resume', font_large, WHITE, (110, 380))
         elif game_state == 'Game_Over':
-            display.fill(BLACK)
-            draw_text('Game Over!', font_large, WHITE, (240, 300))
-            draw_text('Press RETURN to Restart', font_large, WHITE, (110, 355))
-            draw_text(f'Final Score: {score}', font_medium, WHITE, (260, 420))
+            #display.fill(BLACK)
+            #draw_text('Game Over!', font_large, WHITE, (240, 300))
+            #draw_text('Press RETURN to Restart', font_large, WHITE, (110, 355))
+            #draw_text(f'Final Score: {score}', font_medium, WHITE, (260, 420))
+            draw_game_over()
 
     # -- Update Display --
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
