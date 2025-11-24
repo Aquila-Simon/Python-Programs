@@ -1,6 +1,13 @@
-import pygame, sys
+import pygame, sys, os
 
 pygame.init()
+
+# -- Added to run a change directory code for both MacOS and Windows --
+platform_id = sys.platform
+if platform_id == "win32":
+    os.chdir('/Users/Aquil/Documents/Python_Programs/Python-Programs/Flappy_Bird_Dupe')
+elif platform_id == "darwin":
+    os.chdir('/Users/aquila-simon/Documents/Python_Programs/Python-Programs/Flappy_Bird_Dupe')
 
 WINDOW_SIZE = (800, 800)
 screen = pygame.display.set_mode(WINDOW_SIZE)
@@ -12,7 +19,8 @@ color_dark = (100,100,100)
 width = screen.get_width()
 height = screen.get_height()
 
-font_small = pygame.font.SysFont('Rockwell', 35)
+font_small = pygame.font.SysFont('Rockwell', 48)
+font_large = pygame.font.SysFont('Rockwell', 65)
 
 text = font_small.render("Test", True, color)
 text_2 = font_small.render("Button", True, color)
@@ -20,8 +28,11 @@ text_2 = font_small.render("Button", True, color)
 button = pygame.Rect(300, 300, 200, 200)
 action_from_button = pygame.Rect(0, 0, 100, 100)
 
-hover_color = (0,200,200)
-normal_color = (0, 100, 100)
+hover_color = (23, 86, 130)
+normal_color = (27, 107, 164)
+# -- Background Setup --
+background_img = pygame.image.load('background.png').convert()
+background_img = pygame.transform.scale(background_img, (800, 800))
 
 class Button:
     def __init__(self, name, width, height, position):
@@ -41,11 +52,16 @@ class Button:
     def is_clicked(self, mouse_pos):
         return self.rect.collidepoint(mouse_pos)
 
-start_button = Button("Start", 200, 200, (300, 300))
+start_button = Button("Start Game", 360, 100, (219, 334))
+settings_button = Button("Settings", 360, 100, (219, 452))
+quit_button = Button("Quit Game", 360, 100, (219, 570))
 
 while True:
     mouse = pygame.mouse.get_pos()
-
+    screen.blit(background_img, (0,0))
+    #Title Text
+    title_text = font_large.render("SyntaxFlapError", True, (255,255,255))
+    screen.blit(title_text, (400 - title_text.get_width()//2, 200))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -53,12 +69,17 @@ while True:
             #if 300 <= mouse[0] <= 500 and 300 <= mouse[1] <= 500:
                 #screen.fill((0,100,100))
             if start_button.is_clicked(mouse):
+                print("Start Pressed")
                 screen.fill((0,100,100))
-        else:
-                screen.fill((60, 25, 60))
-
-        
+            if settings_button.is_clicked(mouse):
+                print("Settings Pressed")
+                screen.fill((217,217,217))
+            if quit_button.is_clicked(mouse):
+                pygame.quit()
+    
     start_button.draw(screen, mouse)
+    settings_button.draw(screen, mouse)
+    quit_button.draw(screen, mouse)
 
         #if 300 <= mouse[0] <= 500 and 300 <= mouse[1] <= 500:
             #pygame.draw.rect(screen,(0, 200, 200),button)
