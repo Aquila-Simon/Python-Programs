@@ -30,7 +30,8 @@ BLACK = (0, 0, 0)
 # -- Will need to be tested to see which sizes work best for different text elements --
 font_small = pygame.font.SysFont('Rockwell', 25)
 font_medium = pygame.font.SysFont('Rockwell', 40)
-font_large = pygame.font.SysFont('Rockwell', 50)
+font_large = pygame.font.SysFont('Rockwell', 65) #Best for Titles
+font_button = pygame.font.SysFont('Rockwell', 48) #Button Text
 
 
 # -- Game Start Variables --
@@ -80,6 +81,32 @@ background_img = pygame.transform.scale(background_img, (800, 800))
 def draw_text(text, font, color, position):
     text_surface = font.render(text, True, color)
     display.blit(text_surface, position)
+
+# -- Button Setup --
+hover_color = (23, 86, 130)
+normal_color = (27, 107, 164)
+
+# -- Class for defining button --
+class Button:
+    def __init__(self, name, width, height, position):
+        self.name = name
+        self.rect = pygame.Rect(position[0], position[1], width, height)
+
+    # -- Draws Button and Text on Button --
+    # -- Might Require some Tweaking once Integrated, mostly for text centering --
+    def draw(self, screen, mouse_pos):
+        if self.rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, hover_color, self.rect)
+        else:
+            pygame.draw.rect(screen, normal_color, self.rect)
+
+        text_surface = font_button.render(self.name, True, WHITE)
+        text_rect = text_surface.get_rect(center=self.rect.center)
+        screen.blit(text_surface, text_rect)
+    
+    # -- Checks if Button was clicked
+    def is_clicked(self, mouse_pos):
+        return self.rect.collidepoint(mouse_pos)
 
 # -- Start Screen Revamp --
 def draw_start_screen():
