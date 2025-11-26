@@ -111,15 +111,14 @@ class Button:
 # -- Start Screen Revamp --
 def draw_start_screen():
     display.blit(background_img, (0,0)) #Draws background onto start screen
-
     #Title Text
     title_text = font_large.render("SyntaxFlapError", True, (WHITE))
     display.blit(title_text, (400 - title_text.get_width()//2, 200))
-    display.blit(player_image, (375, 375))
+    #display.blit(player_image, (375, 375))
     #Press Space Prompt
-    if (pygame.time.get_ticks() // 500) % 2 == 0:
-        prompt_text = font_small.render("Press ENTER to Start", True, (WHITE))
-        display.blit(prompt_text, (400 - prompt_text.get_width()//2, 550))
+    #if (pygame.time.get_ticks() // 500) % 2 == 0:
+        #prompt_text = font_small.render("Press ENTER to Start", True, (WHITE))
+        #display.blit(prompt_text, (400 - prompt_text.get_width()//2, 550))
 
 # -- Fade to white test before game starts --
 def fade_to_white(surface, duration_frames=30):
@@ -137,6 +136,12 @@ def fade_to_white(surface, duration_frames=30):
     screen.blit(fade_surface, (0, 0))
     pygame.display.flip
     clock.tick(60)
+
+# -- Pause Screen Revamp --
+def draw_pause_screen():
+    #Title Text
+    title_text = font_large.render("Game Paused", True, (WHITE))
+    display.blit(title_text, (400 - title_text.get_width()//2, 200))
 
 # -- Game Over Screen Revamp -- (Decide if we want High Score and Score or only Score??)
 def draw_game_over():
@@ -159,9 +164,9 @@ def draw_game_over():
     display.blit(high_score_text, (400 - high_score_text.get_width()//2, 380))
 
     #Restart Game Prompt
-    if (pygame.time.get_ticks() // 500) % 2 == 0:
-        prompt = font_small.render("Press RETURN to Restart", True, (WHITE))
-        display.blit(prompt, (400 - prompt.get_width()//2, 500))
+    #if (pygame.time.get_ticks() // 500) % 2 == 0:
+        #prompt = font_small.render("Press RETURN to Restart", True, (WHITE))
+        #display.blit(prompt, (400 - prompt.get_width()//2, 500))
 
 # -- Pipe Setup --
 PIPE_WIDTH = 100
@@ -259,6 +264,17 @@ def reset_game():
 
 # -- Main Game Loop --
 while start_game:
+    # -- Getting Mouse Position --
+    mouse = pygame.mouse.get_pos()
+
+    # -- Creating Buttons for Screens --
+    start_button = Button("Start Game", 360, 100, (219, 334))
+    settings_button = Button("Settings", 360, 100, (219, 452))
+    quit_button = Button("Quit Game", 360, 100, (219, 570))
+    continue_button = Button("Continue", 360, 100, (219,334))
+    play_again_button = Button("Play Again", 360, 100, (20, 570))
+    second_quit_button = Button("Quit Game", 360, 100, (420, 570))
+
     # -- Handling Event Cases --
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -267,18 +283,6 @@ while start_game:
         elif event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_SPACE) and game_state == 'Playing_Game':
                 gravity = flap_strength
-            elif event.key == pygame.K_RETURN:
-                if game_state in ('Start_Game', 'Game_Over'):
-                    fade_to_white(display)
-                    game_state = 'Playing_Game'
-                    reset_game()
-                elif game_state == 'Pause_Game':
-                    # When unpausing, adjust pipe spawn timer to ignore pause duration
-                    if pause_start_time is not None:
-                        paused_duration = pygame.time.get_ticks() - pause_start_time
-                        last_pipe_spawn_time += paused_duration
-                        pause_start_time = None
-                    game_state = 'Playing_Game'
             elif event.key == pygame.K_ESCAPE and game_state == 'Playing_Game':
             # When pausing, record the pause start time
                 pause_start_time = pygame.time.get_ticks()
@@ -291,6 +295,40 @@ while start_game:
                 sys.exit()
             elif event.key == pygame.K_RALT:
                 debug_mode = not debug_mode # -- Toggles Debug Mode --
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if game_state == 'Start_Game':
+                if start_button.is_clicked(mouse):
+                    fade_to_white(display)
+                    game_state = 'Playing_Game'
+                    reset_game()
+                if settings_button.is_clicked(mouse):
+                    pass
+                if quit_button.is_clicked(mouse):                        
+                    pygame.quit()
+                    sys.exit()
+            if game_state == 'Pause_Game':
+                if continue_button.is_clicked(mouse):
+                    # When unpausing, adjust pipe spawn timer to ignore pause duration
+                    if pause_start_time is not None:
+                        paused_duration = pygame.time.get_ticks() - pause_start_time
+                        last_pipe_spawn_time += paused_duration
+                        pause_start_time = None
+                    game_state = 'Playing_Game'
+                if settings_button.is_clicked(mouse):
+                    pass
+                if quit_button.is_clicked(mouse):                        
+                    pygame.quit()
+                    sys.exit()
+            if game_state == 'Game_Over':
+                if play_again_button.is_clicked(mouse):
+                    fade_to_white(display)
+                    game_state = 'Playing_Game'
+                    reset_game()
+                if second_quit_button.is_clicked(mouse):
+                    pygame.quit()
+                    sys.exit()
+
+
     # -- Game Logic --
     if game_state == 'Playing_Game':
         display.fill(SKY_BLUE)
@@ -420,15 +458,24 @@ while start_game:
             #display.fill(BLACK)
             #draw_text('Press ENTER to Start', font_large, WHITE, (140, 350))
             draw_start_screen()
+            start_button.draw(display, mouse)
+            settings_button.draw(display, mouse)
+            quit_button.draw(display, mouse)
         elif game_state == 'Pause_Game':
-            draw_text('Game Paused', font_large, WHITE, (230, 330))
-            draw_text('Press RETURN to Resume', font_large, WHITE, (110, 380))
+            #draw_text('Game Paused', font_large, WHITE, (230, 330))
+            #draw_text('Press RETURN to Resume', font_large, WHITE, (110, 380))
+            draw_pause_screen()
+            continue_button.draw(display, mouse)
+            settings_button.draw(display, mouse)
+            quit_button.draw(display, mouse)
         elif game_state == 'Game_Over':
             #display.fill(BLACK)
             #draw_text('Game Over!', font_large, WHITE, (240, 300))
             #draw_text('Press RETURN to Restart', font_large, WHITE, (110, 355))
             #draw_text(f'Final Score: {score}', font_medium, WHITE, (260, 420))
             draw_game_over()
+            play_again_button.draw(display, mouse)
+            second_quit_button.draw(display, mouse)
 
     # -- Update Display --
     screen.blit(pygame.transform.scale(display, WINDOW_SIZE), (0, 0))
