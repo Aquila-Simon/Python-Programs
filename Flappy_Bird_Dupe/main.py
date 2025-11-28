@@ -31,7 +31,7 @@ BLACK = (0, 0, 0)
 font_small = pygame.font.SysFont('Rockwell', 25)
 font_medium = pygame.font.SysFont('Rockwell', 40)
 font_large = pygame.font.SysFont('Rockwell', 65) #Best for Titles
-font_button = pygame.font.SysFont('Rockwell', 48) #Button Text
+font_button = pygame.font.SysFont('Rockwell', 45) #Button Text
 
 
 # -- Game Start Variables --
@@ -41,6 +41,7 @@ ground_height = 150
 score = 0
 high_score = 0
 game_state = 'Start_Game'
+state_tracker = 0 # -- 0 is Game Start and 1 is Playing Game
 start_game = True
 player_location = [100, 0]
 gravity = 0
@@ -85,6 +86,7 @@ def draw_text(text, font, color, position):
 # -- Button Setup --
 hover_color = (23, 86, 130)
 normal_color = (27, 107, 164)
+# -- These colors will eventually have to be replaced with actual drawings
 
 # -- Class for defining button --
 class Button:
@@ -140,10 +142,15 @@ def fade_to_white(surface, duration_frames=30):
 # -- Pause Screen Revamp --
 def draw_pause_screen():
     #Title Text
-    title_text = font_large.render("Game Paused", True, (WHITE))
-    display.blit(title_text, (400 - title_text.get_width()//2, 200))
+    pause_text = font_large.render("Game Paused", True, (WHITE))
+    display.blit(pause_text, (400 - pause_text.get_width()//2, 200))
 
-# -- Game Over Screen Revamp -- (Decide if we want High Score and Score or only Score??)
+def draw_options_screen():
+    display.blit(background_img, (0,0))
+    options_text = font_large.render("Game Options", True, (WHITE))
+    display.blit(options_text, (400 - options_text.get_width()//2, 200))
+
+# -- Game Over Screen Revamp -- (Can be modified to show just score or both score and high score)
 def draw_game_over():
     display.blit(background_img, (0,0))
 
@@ -154,8 +161,8 @@ def draw_game_over():
     display.blit(overlay, (0,0))
 
     #Title Text
-    title = font_large.render("Game Over!", True, (WHITE))
-    display.blit(title, (400 - title.get_width()//2, 200))
+    over_text = font_large.render("Game Over!", True, (WHITE))
+    display.blit(over_text, (400 - over_text.get_width()//2, 200))
     #Current Score
     score_text = font_medium.render(f"Score: {score}", True, (WHITE))
     display.blit(score_text, (400 - score_text.get_width()//2, 320))
@@ -274,6 +281,9 @@ while start_game:
     continue_button = Button("Continue", 360, 100, (219,334))
     play_again_button = Button("Play Again", 360, 100, (20, 570))
     second_quit_button = Button("Quit Game", 360, 100, (420, 570))
+    # -- Work on the next 2 buttons to fix positioning
+    debug_mode_button = Button("Debug Toggle", 380, 100, (5, 570))
+    return_to_game_button = Button("Return to Game", 390, 100, (405, 570))
 
     # -- Handling Event Cases --
     for event in pygame.event.get():
@@ -302,23 +312,37 @@ while start_game:
                     game_state = 'Playing_Game'
                     reset_game()
                 if settings_button.is_clicked(mouse):
-                    pass
+                    #debug_mode = not debug_mode # -- Toggles Debug Mode --
+                    game_state = 'Game_Options'
                 if quit_button.is_clicked(mouse):                        
                     pygame.quit()
                     sys.exit()
             if game_state == 'Pause_Game':
                 if continue_button.is_clicked(mouse):
-                    # When unpausing, adjust pipe spawn timer to ignore pause duration
+                    # -- When unpausing, adjust pipe spawn timer to ignore pause duration --
                     if pause_start_time is not None:
                         paused_duration = pygame.time.get_ticks() - pause_start_time
                         last_pipe_spawn_time += paused_duration
                         pause_start_time = None
                     game_state = 'Playing_Game'
                 if settings_button.is_clicked(mouse):
-                    pass
+                    #debug_mode = not debug_mode # -- Toggles Debug Mode --
+                    game_state = 'Game_Options'
                 if quit_button.is_clicked(mouse):                        
                     pygame.quit()
                     sys.exit()
+            if game_state == 'Game_Options':
+                if debug_mode_button.is_clicked(mouse):
+                    debug_mode = not debug_mode # -- Toggles Debug Mode --
+                if return_to_game_button.is_clicked(mouse) and state_tracker == 0:
+                    game_state = 'Start_Game'
+                elif return_to_game_button.is_clicked(mouse) and state_tracker == 1: # -- Skips Pause Screen entitrely and goes straight to unpausing game
+                    # -- When unpausing, adjust pipe spawn timer to ignore pause duration --
+                    if pause_start_time is not None:
+                        paused_duration = pygame.time.get_ticks() - pause_start_time
+                        last_pipe_spawn_time += paused_duration
+                        pause_start_time = None
+                    game_state = 'Playing_Game'
             if game_state == 'Game_Over':
                 if play_again_button.is_clicked(mouse):
                     fade_to_white(display)
@@ -394,7 +418,7 @@ while start_game:
             # Optional: keep rect for debug visualization
             color_top = PIPE_HIT if player_rect.colliderect(top_rect) else PIPE_BROWN
             color_bottom = PIPE_HIT if player_rect.colliderect(bottom_rect) else PIPE_BROWN
-            # Comment out these two if you don’t want the colored rectangles visible
+            # Code below displays colored rectangles visible for collision detection
             # pygame.draw.rect(display, color_top, top_rect)
             # pygame.draw.rect(display, color_bottom, bottom_rect)
 
@@ -409,10 +433,6 @@ while start_game:
             # Draw images at rect positions
             display.blit(top_body_scaled, (top_rect.x, top_rect.y))
             display.blit(bottom_body_scaled, (bottom_rect.x, bottom_rect.y))
-
-            # Optional: if you have a separate cap/lip image, draw it here
-            # display.blit(pipe_top_img, (top_rect.x, top_rect.bottom - pipe_top_img.get_height()))
-            # display.blit(pipe_top_img, (bottom_rect.x, bottom_rect.y))
 
         # -- Increase difficulty --
         pipe_scroll_speed = min(5 + score // 10, 10)
@@ -457,6 +477,7 @@ while start_game:
         if game_state == 'Start_Game':
             #display.fill(BLACK)
             #draw_text('Press ENTER to Start', font_large, WHITE, (140, 350))
+            state_tracker = 0
             draw_start_screen()
             start_button.draw(display, mouse)
             settings_button.draw(display, mouse)
@@ -464,10 +485,15 @@ while start_game:
         elif game_state == 'Pause_Game':
             #draw_text('Game Paused', font_large, WHITE, (230, 330))
             #draw_text('Press RETURN to Resume', font_large, WHITE, (110, 380))
+            state_tracker = 1
             draw_pause_screen()
             continue_button.draw(display, mouse)
             settings_button.draw(display, mouse)
             quit_button.draw(display, mouse)
+        elif game_state == 'Game_Options': # -- Not in use currently as button generation is broken, will need to troubleshoot --
+            draw_options_screen()
+            debug_mode_button.draw(display, mouse)
+            return_to_game_button.draw(display, mouse)
         elif game_state == 'Game_Over':
             #display.fill(BLACK)
             #draw_text('Game Over!', font_large, WHITE, (240, 300))
